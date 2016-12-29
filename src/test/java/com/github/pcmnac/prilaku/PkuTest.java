@@ -5,6 +5,7 @@ import static com.github.pcmnac.prilaku.Pku.registerAnnotated;
 
 import org.junit.Test;
 
+import com.github.pcmnac.prilaku.Pku.Enhanced;
 import com.github.pcmnac.prilaku.annotation.Behavior;
 import com.github.pcmnac.prilaku.annotation.BehaviorOf;
 import com.github.pcmnac.prilaku.annotation.Domain;
@@ -58,7 +59,7 @@ public class PkuTest
     {
         @Domain
         Account account;
-
+ 
         @Override
         public String serialize()
         {
@@ -79,12 +80,15 @@ public class PkuTest
         Account account = new PremiumAccount();
         account.number = "123456";
         account.amount = 1000.65;
-
-        Pku.get(account, Printer.class).print();
-
+        
         $(account).get(Printer.class).print();
         
         System.out.println($(account).get(Serializer.class).serialize());
+        
+        Enhanced $account = $(account);
+        $account.get(Printer.class).print();
+        $account.get(Serializer.class).serialize();
+        
 
     }
 

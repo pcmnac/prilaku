@@ -30,11 +30,11 @@ import com.google.common.base.Predicate;
 public class Pku
 {
 
-    public static class Holder
+    public static class Enhanced
     {
         private Object domainObject;
 
-        public Holder(Object domainObject)
+        public Enhanced(Object domainObject)
         {
             this.domainObject = domainObject;
         }
@@ -46,9 +46,9 @@ public class Pku
 
     }
 
-    public static Holder $(Object domainObject)
+    public static Enhanced $(Object domainObject)
     {
-        return new Holder(domainObject);
+        return new Enhanced(domainObject);
     }
 
     private static class Pair
@@ -216,7 +216,7 @@ public class Pku
             for (Class<?> behaviorType : behaviors)
             {
                 System.out.println(
-                        String.format("Registering behavior implementation (%s) for domain (%s) and behavior(%s).",
+                        String.format("Registering behavior implementation (%s) for domain (%s) and behavior (%s).",
                                 behaviorImplType, domain.value(), behaviorType));
                 register(domain.value(), behaviorType, behaviorImplType);
             }
