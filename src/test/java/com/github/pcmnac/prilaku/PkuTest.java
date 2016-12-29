@@ -64,7 +64,7 @@ public class PkuTest
         public String serialize()
         {
 
-            return "{ number: " + account.number + ", amount: " + account.amount + " }";
+            return "{ number: \"" + account.number + "\", amount: " + account.amount + " }";
         }
 
     }
