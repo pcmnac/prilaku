@@ -19,7 +19,7 @@ import org.reflections.Reflections;
 
 import com.github.pcmnac.prilaku.annotation.Behavior;
 import com.github.pcmnac.prilaku.annotation.BehaviorOf;
-import com.github.pcmnac.prilaku.annotation.DomainInstance;
+import com.github.pcmnac.prilaku.annotation.Domain;
 import com.google.common.base.Predicate;
 
 /**
@@ -145,7 +145,7 @@ public class Pku
                             @Override
                             public boolean apply(Field input)
                             {
-                                return input.isAnnotationPresent(DomainInstance.class);
+                                return input.isAnnotationPresent(Domain.class);
                             }
                         });
 

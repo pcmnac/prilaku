@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import com.github.pcmnac.prilaku.annotation.Behavior;
 import com.github.pcmnac.prilaku.annotation.BehaviorOf;
-import com.github.pcmnac.prilaku.annotation.DomainInstance;
+import com.github.pcmnac.prilaku.annotation.Domain;
 
 public class PkuTest
 {
@@ -33,7 +33,7 @@ public class PkuTest
     @BehaviorOf(Account.class)
     public static class ConsoleAccountPrinter implements Printer
     {
-        @DomainInstance
+        @Domain
         private Account account;
 
         @Override
@@ -56,7 +56,7 @@ public class PkuTest
     @BehaviorOf(Account.class)
     public static class JsonAccountSerializer implements Serializer
     {
-        @DomainInstance
+        @Domain
         Account account;
 
         @Override
