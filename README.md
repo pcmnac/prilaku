@@ -1,2 +1,2 @@
 # prilaku
-An attempt to use real OO in layered Java projects. 
+An attempt to use something closer to OO in layered Java projects. 
