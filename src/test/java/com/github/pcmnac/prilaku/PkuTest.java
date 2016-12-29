@@ -1,0 +1,91 @@
+package com.github.pcmnac.prilaku;
+
+import static com.github.pcmnac.prilaku.Pku.$;
+import static com.github.pcmnac.prilaku.Pku.registerAnnotated;
+
+import org.junit.Test;
+
+import com.github.pcmnac.prilaku.annotation.Behavior;
+import com.github.pcmnac.prilaku.annotation.BehaviorOf;
+import com.github.pcmnac.prilaku.annotation.DomainInstance;
+
+public class PkuTest
+{
+
+    // domain objects
+    public static class Account
+    {
+        public String number;
+        public double amount;
+    }
+
+    public static class PremiumAccount extends Account
+    {
+    }
+
+    // printer behavior
+    @Behavior
+    public static interface Printer
+    {
+        void print();
+    }
+
+    @BehaviorOf(Account.class)
+    public static class ConsoleAccountPrinter implements Printer
+    {
+        @DomainInstance
+        private Account account;
+
+        @Override
+        public void print()
+        {
+            System.out.println(account);
+            System.out.println("Account: " + account.number);
+        }
+
+    }
+
+    // serializer behavior
+
+    @Behavior
+    public static interface Serializer
+    {
+        String serialize();
+    }
+
+    @BehaviorOf(Account.class)
+    public static class JsonAccountSerializer implements Serializer
+    {
+        @DomainInstance
+        Account account;
+
+        @Override
+        public String serialize()
+        {
+
+            return "{ number: " + account.number + ", amount: " + account.amount + " }";
+        }
+
+    }
+
+    /**
+     * 
+     */
+    @Test
+    public void test()
+    {
+        registerAnnotated("com.github.pcmnac.prilaku");
+
+        Account account = new PremiumAccount();
+        account.number = "123456";
+        account.amount = 1000.65;
+
+        Pku.get(account, Printer.class).print();
+
+        $(account).get(Printer.class).print();
+        
+        System.out.println($(account).get(Serializer.class).serialize());
+
+    }
+
+}
