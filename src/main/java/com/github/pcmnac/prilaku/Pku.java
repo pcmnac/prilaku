@@ -12,6 +12,7 @@ package com.github.pcmnac.prilaku;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 import org.reflections.ReflectionUtils;
@@ -20,6 +21,8 @@ import org.reflections.Reflections;
 import com.github.pcmnac.prilaku.annotation.Behavior;
 import com.github.pcmnac.prilaku.annotation.BehaviorOf;
 import com.github.pcmnac.prilaku.annotation.Domain;
+import com.github.pcmnac.prilaku.provider.DefaultInstanceProvider;
+import com.github.pcmnac.prilaku.provider.InstanceProvider;
 import com.google.common.base.Predicate;
 
 /**
@@ -138,7 +141,17 @@ public class Pku
                     }
                     else
                     {
-                        behaviorImpl = behaviorClass.newInstance();
+                        InstanceProvider provider = new DefaultInstanceProvider();
+
+                        ServiceLoader<InstanceProvider> providers = ServiceLoader.load(InstanceProvider.class);
+                        // if there is a custom instance provider...
+                        if (providers.iterator().hasNext())
+                        {
+                            // use it.
+                            provider = providers.iterator().next();
+                        }
+
+                        behaviorImpl = provider.get(behaviorClass);
 
                         Set<Field> fields = ReflectionUtils.getAllFields(behaviorClass, new Predicate<Field>()
                         {
