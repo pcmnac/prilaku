@@ -113,14 +113,37 @@ public class Pku
 
     private static Map<Pair, Object> cache = new HashMap<Pair, Object>();
 
+    private static InstanceProvider provider;
+
+    private static final Predicate<Field> DOMAIN_FIELD_PREDICATE = new Predicate<Field>()
+    {
+        @Override
+        public boolean apply(Field input)
+        {
+            return input.isAnnotationPresent(Domain.class);
+        }
+    };
+
+    private static final Predicate<Class<?>> BEHAVIOR_PREDICATE = new Predicate<Class<?>>()
+    {
+        @Override
+        public boolean apply(Class<?> type)
+        {
+            return type.isAnnotationPresent(Behavior.class);
+        }
+    };
+
     public static <T> T get(Object domainObject, Class<? extends T> behaviorInterfaceType)
     {
 
+        // Gets appropriate behavior implementation from local cache...
         Object behaviorImpl = cache.get(new Pair(behaviorInterfaceType, domainObject.getClass()));
         Class<?> domainType = domainObject.getClass();
 
+        // If theres no entry for required behavior on cache...
         if (behaviorImpl == null)
         {
+            // Looks for the behavior implementation...
             try
             {
                 Map<Class<?>, Class<?>> implementations = map.get(behaviorInterfaceType);
@@ -131,50 +154,64 @@ public class Pku
                             String.format("No implementations found for behavior: %s", behaviorInterfaceType));
                 }
 
+                // Scans domain class and its super classes looking for an behavior implementation of required
+                // interface.
                 Class<?> treeDomainClass = domainType;
                 do
                 {
                     Class<?> behaviorClass = implementations.get(treeDomainClass);
-                    if (behaviorClass == null)
-                    {
-                        treeDomainClass = treeDomainClass.getSuperclass();
-                    }
-                    else
-                    {
-                        InstanceProvider provider = new DefaultInstanceProvider();
 
-                        ServiceLoader<InstanceProvider> providers = ServiceLoader.load(InstanceProvider.class);
-                        // if there is a custom instance provider...
-                        if (providers.iterator().hasNext())
+                    // if is there a valid behavior implementation...
+                    if (behaviorClass != null)
+                    {
+                        // Gets the behavior implementation by using a instance provider.
+
+                        // if there is no provider set...
+                        if (provider == null)
                         {
-                            // use it.
-                            provider = providers.iterator().next();
+                            // Loads custom provider...
+                            ServiceLoader<InstanceProvider> providers = ServiceLoader.load(InstanceProvider.class);
+                            // if there is a custom instance provider...
+                            if (providers.iterator().hasNext())
+                            {
+                                // uses it.
+                                provider = providers.iterator().next();
+                            }
+                            // otherwise...
+                            else
+                            {
+                                // uses the default one.
+                                provider = new DefaultInstanceProvider();
+                            }
                         }
 
+                        // gets the instance.
                         behaviorImpl = provider.get(behaviorClass);
 
-                        Set<Field> fields = ReflectionUtils.getAllFields(behaviorClass, new Predicate<Field>()
-                        {
-                            @Override
-                            public boolean apply(Field input)
-                            {
-                                return input.isAnnotationPresent(Domain.class);
-                            }
-                        });
+                        // Injects the domain object on annotated field(s).
+                        Set<Field> fields = ReflectionUtils.getAllFields(behaviorClass, DOMAIN_FIELD_PREDICATE);
 
                         for (Field field : fields)
                         {
                             field.setAccessible(true);
                             field.set(behaviorImpl, domainObject);
                         }
-
-                        // cache.put(new Pair(behaviorInterfaceType, domainType), behaviorImpl);
+                    }
+                    // if is there no valid behavior implementation...
+                    else
+                    {
+                        // Looks at its super class...
+                        treeDomainClass = treeDomainClass.getSuperclass();
                     }
                 }
+                // repeats the process until find a valid behavior implementation or reaches Object class on the
+                // hierarchy.
                 while (!treeDomainClass.equals(Object.class) && behaviorImpl == null);
 
+                // If there's no behavior implementation for requested domain object and interface...
                 if (behaviorImpl == null)
                 {
+                    // Throws an exception.
                     throw new RuntimeException(String.format("No implementation found for domain: %s and behavior: %s",
                             domainType, behaviorInterfaceType));
                 }
@@ -193,8 +230,10 @@ public class Pku
     public static void register(Class<?> domainClass, Class<?> behaviorInterfaceType,
             Class<?> behaviorImplementationType)
     {
-
         Map<Class<?>, Class<?>> implementations = map.get(behaviorInterfaceType);
+
+        System.out.println(String.format("Registering behavior implementation (%s) for domain (%s) and behavior (%s).",
+                behaviorImplementationType, domainClass, behaviorInterfaceType));
 
         if (implementations == null)
         {
@@ -203,7 +242,6 @@ public class Pku
         }
 
         implementations.put(domainClass, behaviorImplementationType);
-
     }
 
     public static void registerAnnotated(String packageName)
@@ -214,22 +252,14 @@ public class Pku
 
         for (Class<?> behaviorImplType : annotated)
         {
-
             BehaviorOf domain = behaviorImplType.getAnnotation(BehaviorOf.class);
 
-            Set<Class<?>> behaviors = ReflectionUtils.getAllSuperTypes(behaviorImplType, new Predicate<Class<?>>()
-            {
-                @Override
-                public boolean apply(Class<?> type)
-                {
-                    return type.isAnnotationPresent(Behavior.class);
-                }
-            });
+            Set<Class<?>> behaviors = ReflectionUtils.getAllSuperTypes(behaviorImplType, BEHAVIOR_PREDICATE);
 
             for (Class<?> behaviorType : behaviors)
             {
                 System.out.println(
-                        String.format("Registering behavior implementation (%s) for domain (%s) and behavior (%s).",
+                        String.format("Behavior implementation detected: (%s) for domain (%s) and behavior (%s).",
                                 behaviorImplType, domain.value(), behaviorType));
                 register(domain.value(), behaviorType, behaviorImplType);
             }
